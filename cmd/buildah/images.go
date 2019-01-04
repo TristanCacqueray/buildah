@@ -243,6 +243,7 @@ func outputHeader(truncate, digests bool) {
 
 func outputImages(ctx context.Context, images []storage.Image, store storage.Store, filters *filterParams, argName string, opts imageOptions) error {
 	found := false
+	jsonImages := []jsonImage{}
 	for _, image := range images {
 		createdTime := image.Created
 
@@ -291,13 +292,7 @@ func outputImages(ctx context.Context, images []storage.Image, store storage.Sto
 					break outer
 				}
 				if opts.json {
-					JSONImage := jsonImage{ID: image.ID, Names: image.Names}
-					data, err2 := json.MarshalIndent(JSONImage, "", "    ")
-					if err2 != nil {
-						return err2
-					}
-					fmt.Printf("%s\n", data)
-					// We only want to print each id once
+					jsonImages = append(jsonImages, jsonImage{ID: image.ID, Names: image.Names})
 					break outer
 				}
 				params := imageOutputParams{
@@ -321,6 +316,13 @@ func outputImages(ctx context.Context, images []storage.Image, store storage.Sto
 
 	if !found && argName != "" {
 		return errors.Errorf("No such image %s", argName)
+	}
+	if opts.json {
+		data, err := json.MarshalIndent(jsonImages, "", "    ")
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s\n", data)
 	}
 
 	return nil
